@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Chat</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+  <h2>Chat</h2>
+  <input type="text" id="msg" placeholder="Type a message...">
+  <button onclick="sendMessage()">Send</button>
+  <ul id="chat"></ul>
+
+  <script>
+    const socket = io("http://localhost:5000");
+    const passphrase = "this-is-a-shared-secret-key";
+
+    function encryptMessage(message) {
+      return CryptoJS.AES.encrypt(message, passphrase).toString();
+    }
+
+    function decryptMessage(cipherText) {
+      const bytes = CryptoJS.AES.decrypt(cipherText, passphrase);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("msg").value;
+      const encrypted = encryptMessage(msg);
+      socket.emit("chat", encrypted);
+    }
+
+    socket.on("chat", function (data) {
+      const decrypted = decryptMessage(data);
+      const li = document.createElement("li");
+      li.textContent = decrypted || "[DECRYPTION FAILED]";
+      document.getElementById("chat").appendChild(li);
+    });
+  </script>
+</body>
+</html>
